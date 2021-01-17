@@ -88,7 +88,10 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $user->update($request->only(['name', 'email', 'password']));
+        $user->update($request->only(['name', 'email']));
+        
+        if ($request->password)
+            $user->update($request->only(['password']));
 
         return new UserResource($user);
     }
