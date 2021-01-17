@@ -88,13 +88,26 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $user->update($request->only(['name', 'email']));
-        
-        if ($request->password)
-            $user->update($request->only(['password']));
+        $this->updateUser($user, $request);
 
         return new UserResource($user);
     }
+
+    /**
+     * Update the specified resource with parameters received.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  User  $user
+     * @return \Illuminate\Http\Response
+     */
+    private function updateUser($user, $request)
+    {
+        if ($request->password)
+            return $user->update($request->only(['password']));
+        
+        return $user->update($request->only(['name', 'email']));
+    }
+
 
     /**
      * Remove the specified resource from storage.
