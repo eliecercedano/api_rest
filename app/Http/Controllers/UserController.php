@@ -88,24 +88,25 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $this->updateUser($user, $request);
+        $user->update($request->only($this->getUpdateFields($request)));
 
         return new UserResource($user);
     }
 
     /**
-     * Update the specified resource with parameters received.
+     * return fields to update.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  User  $user
-     * @return \Illuminate\Http\Response
+     * @return Array
      */
-    private function updateUser($user, $request)
+    private function getUpdateFields($request)
     {
+        $update_fields = ['name', 'email'];
+
         if ($request->password)
-            return $user->update($request->only(['password']));
-        
-        return $user->update($request->only(['name', 'email']));
+            $update_fields[] = 'password';
+
+        return $update_fields;
     }
 
 
