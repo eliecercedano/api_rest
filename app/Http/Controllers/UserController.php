@@ -13,6 +13,11 @@ class UserController extends Controller
 {
      private $paginate = 10;
 
+    public function __construct()
+    {
+        $this->middleware('auth:api');
+    }
+
     /**
      * Display a listing of the resource.
      *
