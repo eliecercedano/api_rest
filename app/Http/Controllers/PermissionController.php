@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-
-use App\Http\Resources\UserResource;
-use App\Http\Resources\UserCollection;
-
 use Illuminate\Http\Request;
 
-class UserController extends Controller
+use App\Models\Permission;
+use App\Http\Resources\PermissionResource;
+
+class PermissionController extends Controller
 {
      private $permission;
      private $paginate;
@@ -18,7 +16,7 @@ class UserController extends Controller
     {
         $this->middleware('auth:api');
         
-        $this->permission = 'user';
+        $this->permission = 'permission';
         $this->paginate = 10;
 
     }
@@ -33,7 +31,7 @@ class UserController extends Controller
         if ( ! hasPermission($this->permission) )
             return response()->json(['message' => 'not authorized'], 403);
 
-        return new UserCollection(User::with('roles')->paginate($this->paginate));
+        return PermissionResource::collection(Permission::paginate($this->paginate));
     }
 
     /**
@@ -58,21 +56,19 @@ class UserController extends Controller
             return response()->json(['message' => 'not authorized'], 403);
 
         $request->validate([
-            'name' => 'required|string|max:150',
-            'email' => 'required|string|email|max:255|unique:users'
+            'name' => 'required|string|max:255',
+            'display_name' => 'required|string|max:255'
         ]);
 
-        $user = new User([
+        $permission = new Permission([
             'name' => $request->name,
-            'email' => $request->email,
-            'password' => $request->password
+            'display_name' => $request->display_name,
+            'description' => $request->description
         ]);
         
-        $user->save();
+        $permission->save();
 
-        $this->updateRolesAndPermissions($request, $user);
-
-        return new UserResource($user);
+        return new PermissionResource($permission);
     }
 
     /**
@@ -81,12 +77,12 @@ class UserController extends Controller
      * @param  User  $user
      * @return \Illuminate\Http\Response
      */
-    public function show(User $user)
+    public function show(Permission $permission)
     {
         if ( ! hasPermission($this->permission.'-show') )
             return response()->json(['message' => 'not authorized'], 403);
 
-        return new UserResource($user);
+        return  new PermissionResource($permission);
     }
 
     /**
@@ -107,16 +103,14 @@ class UserController extends Controller
      * @param  User  $user
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, Permission $permission)
     {
         if ( ! hasPermission($this->permission.'-update') )
             return response()->json(['message' => 'not authorized'], 403);
 
-        $user->update($request->only($this->getUpdateFields($request)));
-
-        $this->updateRolesAndPermissions($request, $user);
-
-        return new UserResource($user);
+        $permission->update($request->only(['name', 'display_name', 'description']));
+    
+        return new PermissionResource($permission);
     }
 
     /**
@@ -125,48 +119,16 @@ class UserController extends Controller
      * @param  User  $user
      * @return \Illuminate\Http\Response
      */
-    public function destroy(User $user)
+    public function destroy(Permission $permission)
     {
         if ( ! hasPermission($this->permission.'-destroy') )
             return response()->json(['message' => 'not authorized'], 403);
 
-        $user->delete();
+        $permission->delete();
         
         return response()->json([
-            'message' => 'user deleted!'
+            'message' => 'permission deleted!'
         ], 204);
     }
-
-    /**
-     * return fields to update.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return Array
-     */
-    private function getUpdateFields($request)
-    {
-        $update_fields = ['name', 'email'];
-
-        if ($request->password)
-            $update_fields[] = 'password';
-
-        return $update_fields;
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  User  $user
-     * @return \Illuminate\Http\Response
-     */
-    private function updateRolesAndPermissions($request, $user)
-    {
-        $roles = $request->roles ?? [];
-        $user->syncRoles($roles);
-
-        $permissions = $request->permissions ?? [];
-        $user->syncPermissions($permissions);
-    }
-
 
 }
